@@ -1,0 +1,12 @@
+# Build output and binaries
+bin/
+build/
+*.o
+*.out
+campuspath_app
+
+# Test binaries
+tests/test_graph
+tests/test_dijkstra
+tests/test_campus_map
+tests/test_shortest_path
