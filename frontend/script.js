@@ -64,12 +64,12 @@
     if (!trimmed || trimmed === DEFAULT_BACKEND_URL) {
       try {
         localStorage.removeItem(STORAGE_KEY_BACKEND_URL);
-      } catch (e) {}
+      } catch (e) { }
       return DEFAULT_BACKEND_URL;
     }
     try {
       localStorage.setItem(STORAGE_KEY_BACKEND_URL, trimmed);
-    } catch (e) {}
+    } catch (e) { }
     return trimmed;
   }
 
@@ -607,9 +607,29 @@
 
     try {
       // 1. Prepare Request Payload adhering strictly to API Contract
+      const backendIdMap = {
+        'main-gate': 0,
+        'cs-block': 1,
+        'library': 2,
+        'canteen': 3,
+        'hostel': 4,
+        'auditorium': 5,
+        'academic-block': 6,
+        'admin-block': 7,
+        'parking-area': 8,
+        'sports-ground': 9
+      };
+
+      const sourceBackendId = backendIdMap[srcId];
+      const destinationBackendId = backendIdMap[dstId];
+
+      if (sourceBackendId === undefined || destinationBackendId === undefined) {
+        throw new Error('This location is not yet available in the backend.');
+      }
+
       const requestPayload = {
-        source: srcLoc.name,
-        destination: dstLoc.name
+        source: sourceBackendId,
+        destination: destinationBackendId
       };
 
       // 2. Setup Timeout Controller
@@ -656,11 +676,36 @@
       }
 
       // 7. Extract Route Array (support 'route' or fallback 'path')
-      const routeArray = responseData.route || responseData.path;
-      if (!routeArray || !Array.isArray(routeArray) || routeArray.length < 2) {
-        throw new Error('Backend response must contain a "route" array with at least 2 locations.');
+      // 7. Convert backend numeric IDs to frontend location IDs
+      const rawRoute = responseData.route || responseData.path;
+
+      if (!Array.isArray(rawRoute) || rawRoute.length < 2) {
+        throw new Error('Backend response must contain a valid route array.');
       }
 
+      const backendToFrontendId = {
+        0: 'main-gate',
+        1: 'cs-block',
+        2: 'library',
+        3: 'canteen',
+        4: 'hostel',
+        5: 'auditorium',
+        6: 'academic-block',
+        7: 'admin-block',
+        8: 'parking-area',
+        9: 'sports-ground'
+      };
+
+      const routeArray = rawRoute.map(item => {
+        const backendId =
+          typeof item === 'object' && item !== null ? item.id : item;
+
+        return backendToFrontendId[Number(backendId)];
+      });
+
+      if (routeArray.some(id => id === undefined)) {
+        throw new Error('Backend returned an unknown campus location ID.');
+      }
       // 8. Requirement 7: Validate each location against campus map
       const unrecognized = [];
       routeArray.forEach(nameOrId => {

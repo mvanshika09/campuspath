@@ -1,6 +1,6 @@
 CXX := g++
 CXXFLAGS := -std=c++17 -Wall -Wextra -pedantic -Iinclude
-LDFLAGS := -pthread
+LDFLAGS := -pthread -lws2_32
 
 # Directory paths
 BIN_DIR := bin
