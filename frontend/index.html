@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CampusPath – Smart Campus Navigation & Shortest Path Finder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-dark">
+  <!-- Top App Navigation Bar -->
+  <header class="app-header">
+    <div class="header-branding">
+      <div class="logo-badge">
+        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M12 2a10 10 0 0 0-10 10c0 5.25 7 10 10 10s10-4.75 10-10A10 10 0 0 0 12 2z"></path>
+          <path d="M12 8v8M8 12h8" stroke-width="1.5"></path>
+        </svg>
+      </div>
+      <div class="brand-text-wrap">
+        <div class="brand-row">
+          <h1 class="app-title">Campus<span>Path</span></h1>
+          <span class="version-tag">PRO v2.0</span>
+        </div>
+        <p class="app-tagline">Intelligent Wayfinding & Graph Telemetry System</p>
+      </div>
+    </div>
+
+    <!-- Quick Stats Telemetry Center -->
+    <div class="header-telemetry">
+      <div class="telemetry-pill" title="Graph Network Density">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="6" cy="6" r="3"></circle>
+          <circle cx="18" cy="18" r="3"></circle>
+          <circle cx="18" cy="6" r="3"></circle>
+          <line x1="8.5" y1="7.5" x2="15.5" y2="16.5"></line>
+          <line x1="15.5" y1="7.5" x2="8.5" y2="16.5"></line>
+        </svg>
+        <span>10 Vertices • 17 Edges</span>
+      </div>
+      <div class="status-chip" id="backend-status-chip">
+        <span class="status-dot"></span>
+        <span class="status-label">C++ Engine: Standby</span>
+      </div>
+      <div class="campus-clock" id="live-clock">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- Mobile View Toggle Segmented Tabs -->
+  <div class="mobile-view-tabs" id="mobile-view-tabs">
+    <button type="button" class="tab-btn active" data-view="sidebar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+      </svg>
+      <span>Navigation</span>
+    </button>
+    <button type="button" class="tab-btn" data-view="map">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+        <line x1="8" y1="2" x2="8" y2="18"></line>
+        <line x1="16" y1="6" x2="16" y2="22"></line>
+      </svg>
+      <span>Campus Map</span>
+    </button>
+  </div>
+
+  <!-- Main Dashboard Grid Layout -->
+  <main class="dashboard-layout">
+    <!-- Navigation & Routing Control Sidebar -->
+    <aside class="control-sidebar" id="control-sidebar">
+      <!-- Route Planner Card -->
+      <section class="glass-card nav-controls-card">
+        <div class="card-header">
+          <div class="card-title-wrap">
+            <div class="card-icon-halo">
+              <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+              </svg>
+            </div>
+            <div>
+              <h2>Route Planner</h2>
+              <span class="card-subtitle">Graph Dijkstra Shortest Path</span>
+            </div>
+          </div>
+          <span class="badge badge-accent">Interactive</span>
+        </div>
+
+        <!-- Inline Alert / Error Banner -->
+        <div class="alert-banner" id="nav-alert-banner" style="display: none;" role="alert">
+          <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span class="alert-text" id="nav-alert-text">Alert notification message</span>
+          <button type="button" class="btn-close-alert" id="btn-close-alert" title="Dismiss">✕</button>
+        </div>
+
+        <form id="routing-form" onsubmit="return false;" autocomplete="off">
+          <!-- Source Selection -->
+          <div class="input-group">
+            <div class="label-row">
+              <label for="source-select">
+                <span class="dot-indicator dot-source"></span>
+                <span>Starting Location (Source)</span>
+              </label>
+              <span class="endpoint-code" id="src-code-tag">POINT A</span>
+            </div>
+            <div class="select-wrapper">
+              <div class="select-prefix-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </div>
+              <select id="source-select" required aria-label="Select Starting Location">
+                <option value="" disabled selected>Select Starting Point...</option>
+                <!-- Populated dynamically via map.js -->
+              </select>
+              <span class="select-chevron">▾</span>
+            </div>
+          </div>
+
+          <!-- Quick Swap Action Row -->
+          <div class="swap-action-row">
+            <button type="button" id="btn-swap-locations" class="btn-swap" title="Swap Starting and Destination points" aria-label="Swap Starting and Destination points">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"></path>
+              </svg>
+              <span>Invert Route</span>
+            </button>
+            <div class="swap-divider-line"></div>
+          </div>
+
+          <!-- Destination Selection -->
+          <div class="input-group">
+            <div class="label-row">
+              <label for="dest-select">
+                <span class="dot-indicator dot-dest"></span>
+                <span>Destination Point</span>
+              </label>
+              <span class="endpoint-code" id="dst-code-tag">POINT B</span>
+            </div>
+            <div class="select-wrapper">
+              <div class="select-prefix-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+              </div>
+              <select id="dest-select" required aria-label="Select Target Destination">
+                <option value="" disabled selected>Select Target Destination...</option>
+                <!-- Populated dynamically via map.js -->
+              </select>
+              <span class="select-chevron">▾</span>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="button-row">
+            <button type="button" id="btn-find-path" class="btn btn-primary" aria-label="Find Shortest Path">
+              <span class="btn-spinner" id="btn-spinner" style="display: none;" aria-hidden="true"></span>
+              <svg class="btn-icon" id="btn-find-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+              </svg>
+              <span id="btn-find-label">Find Shortest Path</span>
+            </button>
+            <button type="button" id="btn-reset" class="btn btn-secondary" aria-label="Reset Route">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                <path d="M3 3v5h5"></path>
+              </svg>
+              <span>Reset</span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Quick Commute Presets -->
+        <div class="presets-container">
+          <span class="presets-title">Popular Routes</span>
+          <div class="presets-row">
+            <button type="button" class="preset-pill" data-src="main-gate" data-dst="library" title="Main Gate → Library">
+              <span>Main Gate → Library</span>
+            </button>
+            <button type="button" class="preset-pill" data-src="academic-block" data-dst="cs-block" title="Academic Block → Computer Science Block">
+              <span>Academic → CS Block</span>
+            </button>
+            <button type="button" class="preset-pill" data-src="hostel" data-dst="canteen" title="Hostel → Canteen">
+              <span>Hostel → Canteen</span>
+            </button>
+            <button type="button" class="preset-pill" data-src="parking-area" data-dst="auditorium" title="Parking Area → Auditorium">
+              <span>Parking → Auditorium</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Map Selection Guide Pill -->
+        <div class="click-guide-pill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span id="click-guide-text">Tip: Click building beacons on the map to set Source and Destination</span>
+        </div>
+      </section>
+
+      <!-- Route Output & Itinerary Panel -->
+      <section class="glass-card route-results-card" id="route-results-container">
+        <div class="card-header">
+          <div class="card-title-wrap">
+            <div class="card-icon-halo">
+              <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="6" cy="19" r="3"></circle>
+                <path d="M9 19h8.5a4.5 4.5 0 0 0 0-9H5a3 3 0 0 1 0-6h14"></path>
+                <circle cx="18" cy="5" r="3"></circle>
+              </svg>
+            </div>
+            <div>
+              <h2>Navigation Itinerary</h2>
+              <span class="card-subtitle">Waypoint Telemetry</span>
+            </div>
+          </div>
+          <span class="badge" id="route-status-badge">Standby</span>
+        </div>
+
+        <!-- Initial Placeholder State -->
+        <div class="route-placeholder" id="route-placeholder">
+          <div class="empty-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+              <path d="M3 9h18M9 21V9"></path>
+            </svg>
+          </div>
+          <h3>No Active Itinerary</h3>
+          <p>Select endpoints or click map beacons to query the C++ Graph Engine for the optimal Dijkstra path.</p>
+        </div>
+
+        <!-- Calculating / Radar Loading Animation -->
+        <div class="route-loading-state" id="route-loading-state" style="display: none;">
+          <div class="radar-scan-box">
+            <div class="radar-ring radar-ring-1"></div>
+            <div class="radar-ring radar-ring-2"></div>
+            <div class="radar-core"></div>
+          </div>
+          <h3 class="loading-title">Calculating Shortest Path</h3>
+          <p class="loading-subtitle" id="loading-subtitle">Querying C++ Routing Engine on port 8080...</p>
+          <div class="loading-skeleton-wrap">
+            <div class="skeleton-line line-1"></div>
+            <div class="skeleton-line line-2"></div>
+            <div class="skeleton-line line-3"></div>
+          </div>
+        </div>
+
+        <!-- Dedicated Error State Card -->
+        <div class="route-error-state" id="route-error-state" style="display: none;">
+          <div class="error-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <h3 class="error-title" id="error-title">Routing Error</h3>
+          <p class="error-desc" id="error-desc">Error details will appear here.</p>
+          <div class="error-action-row" id="error-action-row"></div>
+        </div>
+
+        <!-- Computed Route Content (Shown upon C++ calculation) -->
+        <div class="route-content" id="route-content" style="display: none;">
+          <!-- Route Endpoints Banner -->
+          <div class="route-endpoints-banner">
+            <div class="endpoint-chip chip-src">
+              <span class="chip-dot"></span>
+              <span class="chip-text" id="route-src-label">Source</span>
+            </div>
+            <div class="endpoint-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </div>
+            <div class="endpoint-chip chip-dst">
+              <span class="chip-dot"></span>
+              <span class="chip-text" id="route-dst-label">Destination</span>
+            </div>
+          </div>
+
+          <!-- Telemetry Metrics HUD -->
+          <div class="metrics-grid">
+            <div class="metric-box metric-box-highlight">
+              <span class="metric-label">Total Distance</span>
+              <span class="metric-value" id="res-distance">-- m</span>
+              <span class="metric-sub">C++ Backend Verified</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-label">Estimated Walking</span>
+              <span class="metric-value" id="res-time">-- min</span>
+              <span class="metric-sub">Pace: 1.35 m/s</span>
+            </div>
+            <div class="metric-box">
+              <span class="metric-label">Campus Hops</span>
+              <span class="metric-value" id="res-hops">-- nodes</span>
+              <span class="metric-sub">Optimal Vertices</span>
+            </div>
+          </div>
+
+          <!-- Ordered Sequence Itinerary Timeline -->
+          <div class="itinerary-timeline-wrap">
+            <div class="timeline-header-row">
+              <h4 class="timeline-title">Optimal Path Traversal</h4>
+              <span class="timeline-hint">Click waypoint to focus map</span>
+            </div>
+            <ol class="path-timeline" id="path-timeline">
+              <!-- Dynamically populated from backend response -->
+            </ol>
+          </div>
+        </div>
+
+        <!-- C++ Backend Integration & Endpoint Config Drawer -->
+        <div class="backend-connection-box">
+          <div class="backend-box-header">
+            <div class="backend-title">
+              <span class="tech-tag">C++ Engine</span>
+              <span>REST POST Integration</span>
+            </div>
+            <button type="button" class="btn-toggle-config" id="btn-toggle-backend-info" title="Toggle Backend Details">
+              Configure ▾
+            </button>
+          </div>
+
+          <div class="backend-details" id="backend-details-drawer">
+            <p class="backend-desc">
+              CampusPath executes real-time graph navigation by delegating to your C++ Dijkstra service.
+            </p>
+
+            <!-- Configurable Backend URL Field -->
+            <div class="endpoint-config-row">
+              <label for="backend-url-input" class="endpoint-config-label">Target Service URL:</label>
+              <div class="url-input-group">
+                <input type="url" id="backend-url-input" class="backend-url-input" value="http://localhost:8080/api/shortest-path" spellcheck="false" placeholder="http://localhost:8080/api/shortest-path">
+                <button type="button" id="btn-save-backend-url" class="btn-subtle" title="Save URL to LocalStorage">Save</button>
+                <button type="button" id="btn-reset-backend-url" class="btn-subtle" title="Reset to default URL">Reset</button>
+              </div>
+            </div>
+
+            <!-- API Contract Reference -->
+            <div class="schema-hint">
+              <div class="schema-header">
+                <span class="endpoint-method">POST</span>
+                <span class="schema-route-name">/api/shortest-path</span>
+              </div>
+              <small>Request Payload (JSON):</small>
+              <pre><code>{
+  "source": "Main Gate",
+  "destination": "Library"
+}</code></pre>
+              <small>Expected C++ Response (JSON):</small>
+              <pre><code>{
+  "success": true,
+  "route": ["Main Gate", "Canteen", "Library"],
+  "distance": 250
+}</code></pre>
+            </div>
+
+            <!-- Developer Verification Tool -->
+            <div class="test-runner-row">
+              <button type="button" class="btn-test-loader" id="btn-simulate-backend-response">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                <span>Test with Sample Backend Payload</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <!-- Map Viewport Section -->
+    <section class="map-viewport-section" id="map-viewport-section">
+      <div class="glass-card map-frame">
+        <!-- Map Overlay Header Controls -->
+        <div class="map-toolbar">
+          <div class="map-toolbar-left">
+            <div class="map-title-indicator">
+              <span class="pulse-ring"></span>
+              <span class="map-headline">Interactive Campus Schematic</span>
+            </div>
+            <span class="map-scale-tag">1:500 Topographic</span>
+            <span class="map-coord-tag">CAMPUS-GRID // 1200×800</span>
+          </div>
+
+          <div class="map-toolbar-right">
+            <button type="button" class="map-tool-btn" id="btn-zoom-in" title="Zoom In (+)">+</button>
+            <button type="button" class="map-tool-btn" id="btn-zoom-out" title="Zoom Out (−)">−</button>
+            <button type="button" class="map-tool-btn" id="btn-reset-view" title="Reset View & Center">⟲</button>
+          </div>
+        </div>
+
+        <!-- Interactive SVG Campus Map Canvas -->
+        <div class="svg-map-wrapper" id="map-scroll-container">
+          <svg 
+            id="campus-svg" 
+            viewBox="0 0 1200 800" 
+            preserveAspectRatio="xMidYMid meet"
+            xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <!-- Electric Blue Glow Filter -->
+              <filter id="neon-glow" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="6" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+
+              <!-- Source / Destination Pin Halo Filter -->
+              <filter id="pin-halo" x="-40%" y="-40%" width="180%" height="180%">
+                <feGaussianBlur stdDeviation="9" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+
+              <!-- Linear Gradients for Map Pathways & Areas -->
+              <linearGradient id="path-active-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#00f0ff" />
+                <stop offset="50%" stop-color="#0072ff" />
+                <stop offset="100%" stop-color="#00f0ff" />
+              </linearGradient>
+
+              <linearGradient id="sports-turf-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#051c17" />
+                <stop offset="100%" stop-color="#072d24" />
+              </linearGradient>
+
+              <linearGradient id="lake-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#03152c" />
+                <stop offset="100%" stop-color="#082b54" />
+              </linearGradient>
+
+              <pattern id="campus-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255, 255, 255, 0.025)" stroke-width="1"/>
+              </pattern>
+
+              <pattern id="campus-subgrid" width="120" height="120" patternUnits="userSpaceOnUse">
+                <path d="M 120 0 L 0 0 0 120" fill="none" stroke="rgba(0, 240, 255, 0.035)" stroke-width="1.2"/>
+              </pattern>
+            </defs>
+
+            <!-- Background & Campus Zones Layer -->
+            <rect width="1200" height="800" fill="#050a17" />
+            <rect width="1200" height="800" fill="url(#campus-grid)" />
+            <rect width="1200" height="800" fill="url(#campus-subgrid)" />
+
+            <!-- Decorative Landscape & Architectural Zones -->
+            <g id="campus-landscape">
+              <!-- Dynamically rendered via map.js -->
+            </g>
+
+            <!-- Static Walkways / Graph Edge Layer -->
+            <g id="campus-pathways-group" class="pathways-layer">
+              <!-- Dynamically drawn pathways connecting all 10 locations -->
+            </g>
+
+            <!-- Dynamic Active Shortest Path Route Layer -->
+            <g id="active-route-layer">
+              <!-- Glow backdrop for computed route -->
+              <path id="route-path-glow" d="" fill="none" stroke="#00f0ff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" opacity="0" filter="url(#neon-glow)" />
+              <!-- Primary animated route stroke -->
+              <path id="route-path-line" d="" fill="none" stroke="url(#path-active-gradient)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0" />
+            </g>
+
+            <!-- Location Markers / Graph Vertices Layer -->
+            <g id="campus-nodes-group" class="nodes-layer">
+              <!-- Dynamically rendered 10 location buildings -->
+            </g>
+          </svg>
+
+          <!-- Interactive Telemetry Tooltip Box -->
+          <div class="map-tooltip" id="map-tooltip">
+            <div class="tooltip-header">
+              <span class="tooltip-badge" id="tooltip-category">CATEGORY</span>
+              <span class="tooltip-action" id="tooltip-action">CLICK TO SELECT</span>
+            </div>
+            <div class="tooltip-title" id="tooltip-title">Location Name</div>
+            <div class="tooltip-desc" id="tooltip-desc">Building description and facility info.</div>
+          </div>
+        </div>
+
+        <!-- Map Footer Legend -->
+        <div class="map-legend-bar">
+          <div class="legend-item">
+            <span class="legend-color legend-source"></span>
+            <span>Source (A)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color legend-dest"></span>
+            <span>Destination (B)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color legend-active-path"></span>
+            <span>Dijkstra Shortest Route</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color legend-node"></span>
+            <span>Campus Block (Vertex)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color legend-road"></span>
+            <span>Pedestrian Avenue (Edge)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Notification Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="map.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
